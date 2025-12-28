@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Users, Plus, Search, Eye, CreditCard, Trash2, Edit2 } from "lucide-react";
+import { Users, Plus, Search, Eye, CreditCard, Trash2 } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/database";
-import { Customer } from "@/lib/types";
+import { Customer, SalesInvoice } from "@/lib/types";
 import PageLayout from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import InvoiceDetailsDialog from "@/components/shared/InvoiceDetailsDialog";
 
 const Customers = () => {
   const { toast } = useToast();
@@ -26,6 +27,8 @@ const Customers = () => {
   const [newPhone, setNewPhone] = useState("");
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentNote, setPaymentNote] = useState("");
+  const [selectedInvoice, setSelectedInvoice] = useState<SalesInvoice | null>(null);
+  const [showInvoiceDetails, setShowInvoiceDetails] = useState(false);
 
   const customers = useLiveQuery(() => db.customers.toArray()) || [];
   const salesInvoices = useLiveQuery(() => db.salesInvoices.toArray()) || [];
@@ -295,8 +298,16 @@ const Customers = () => {
                     <p className="text-sm text-muted-foreground text-right">لا توجد فواتير</p>
                   ) : (
                     getCustomerInvoices(selectedCustomer.id!).map((inv) => (
-                      <div key={inv.id} className="bg-card p-3 rounded border border-border flex justify-between">
-                        <span className="text-primary font-medium">{inv.total.toFixed(2)}</span>
+                      <div key={inv.id} className="bg-card p-3 rounded border border-border flex justify-between items-center">
+                        <button
+                          onClick={() => {
+                            setSelectedInvoice(inv);
+                            setShowInvoiceDetails(true);
+                          }}
+                          className="text-primary font-medium hover:underline cursor-pointer"
+                        >
+                          {inv.total.toFixed(2)}
+                        </button>
                         <span className="text-sm text-muted-foreground">
                           {new Date(inv.createdAt).toLocaleDateString('ar-EG')}
                         </span>
@@ -332,6 +343,14 @@ const Customers = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Invoice Details Dialog */}
+      <InvoiceDetailsDialog
+        invoice={selectedInvoice}
+        open={showInvoiceDetails}
+        onOpenChange={setShowInvoiceDetails}
+        type="sales"
+      />
     </PageLayout>
   );
 };
